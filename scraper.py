@@ -1,36 +1,41 @@
 #!/usr/bin/env python
+'''scraper.py'''
 
-import grequests
 from bs4 import BeautifulSoup
+import grequests
+import arrow
 
-channels = ["yle1", "yle2", "mtv3", "nelonen", "subtv"]
+TODAY = arrow.now('Europe/Helsinki').format('dddd', 'fi_fi')
+CHANNELS = ['yle1', 'yle2', 'mtv3', 'nelonen', 'subtv']
+BASE_PATH = 'http://www.telsu.fi'
 
-def processChannel(content):
+def process_channel(content):
+    '''processes channel information'''
+
     soup = BeautifulSoup(content, 'html.parser')
 
-    summaries = map(lambda x: x.get_text(), soup.find_all("span", class_="_summary"))
-    descriptions = map(lambda x: x.get_text(), soup.find_all("div", class_="t"))
-    starts = map(lambda x: x.get_text(), soup.find_all("span", class_="_start"))
-    ends = map(lambda x: x.get_text(), soup.find_all("span", class_="_end"))
+    summaries = [x.get_text() for x in soup.find_all('var', class_='atc_title')]
+    descriptions = [x.get_text() for x in soup.find_all('div', class_='t')]
+    starts = [x.get_text() for x in soup.find_all('var', class_='atc_date_start')]
+    ends = [x.get_text() for x in soup.find_all('var', class_='atc_date_end')]
 
     programs = []
 
     for i in range(len(summaries)):
-        program = {
-            "name": summaries[i],
-            "description": descriptions[i],
-            "start": starts[i],
-            "end": ends[i]
-        }
-        programs.append(program)
+        programs.append({
+            'name': summaries[i],
+            'description': descriptions[i],
+            'start': starts[i],
+            'end': ends[i]
+        })
 
-    print("processed {} programs".format(len(programs)))
+    print ('processed {} programs'.format(len(programs)))
 
     return {
-        "programs": programs
+        'programs': programs
     }
 
 # creates a set of unsent requests
-requests = (grequests.get("http://www.telsu.fi/sunnuntai/" + channel) for channel in channels)
+REQUESTS = (grequests.get(BASE_PATH + '/' + TODAY + '/' + channel) for channel in CHANNELS)
 # send them all at the same time and map the responses to processChannel function
-all_programs = map(lambda response: processChannel(response.text), grequests.map(requests))
+ALL_PROGRAMS = [process_channel(response.text) for response in grequests.map(REQUESTS)]
