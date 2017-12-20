@@ -21,7 +21,7 @@ def process_channel(content):
 
     programs = []
 
-    for i in range(len(summaries)):
+    for i in enumerate(summaries):
         programs.append({
             'name': summaries[i],
             'description': descriptions[i],
@@ -29,7 +29,7 @@ def process_channel(content):
             'end': ends[i]
         })
 
-    print ('processed {} programs'.format(len(programs)))
+    print('processed {} programs'.format(len(programs)))
 
     return {
         'programs': programs
